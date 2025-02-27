@@ -349,6 +349,24 @@ Icon=vscodium
 EOF
 chown -R "$USER:$USER" "$HOME/Desktop"
 
+# Create the desktop shortcut dynamically
+cat << EOF > "$HOME/Desktop/Change_VNC_Password.desktop"
+[Desktop Entry]
+Name=Change VNC Password
+Comment=Change the VNC password and restart the server
+Exec=/usr/local/bin/change_vnc_password.sh
+Icon=preferences-desktop-user-password
+Terminal=true
+Type=Application
+Categories=Utility;
+EOF
+
+# Make the shortcut executable
+chmod +x "$HOME/Desktop/Change_VNC_Password.desktop"
+
+# Ensure it belongs to the correct user
+chown "$USER:$USER" "$HOME/Desktop/Change_VNC_Password.desktop"
+
 # clearup
 PASSWORD=
 VNC_PASSWORD=

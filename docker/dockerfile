@@ -110,6 +110,19 @@ RUN rm /etc/apt/apt.conf.d/docker-clean
 
 COPY ./entrypoint.sh /
 
+
+# Scrpit to change VNC password
+COPY ./change_vnc_password.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/change_vnc_password.sh
+# Ensure the Desktop directory exists for all users
+RUN mkdir -p /etc/skel/Desktop
+
+# Copy the shortcut creation script
+COPY Change_VNC_Password.desktop /etc/skel/Desktop/
+RUN chmod +x /etc/skel/Desktop/Change_VNC_Password.desktop
+
+
+
 ENTRYPOINT [ "/bin/bash", "-c", "/entrypoint.sh" ]
 
 ENV USER mfet442
