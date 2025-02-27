@@ -1,5 +1,19 @@
 # ROS2-Docker-Server
 
+## Creating the container
+
+```bash
+docker run -d \
+    -p user1port:80 \
+    -e USER=user1 \
+    -e PASSWD=user1pwd \
+    -e ROS_DOMAIN_ID=1 \
+    --security-opt seccomp=unconfined\
+    --shm-size=512m \
+    -v /host/home/docker_ws/user1:/home \
+    --name user1_container ros2-desktop-vnc:latest
+```
+
 ## License
 
 TODO:

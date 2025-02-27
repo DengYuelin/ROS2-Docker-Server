@@ -78,6 +78,11 @@ grep -F "source /opt/ros/$ROS_DISTRO/setup.bash" "$BASHRC_PATH" || echo "source 
 grep -F "export ROS_AUTOMATIC_DISCOVERY_RANGE=" "$BASHRC_PATH" || echo "export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST" >> "$BASHRC_PATH"
 chown "$USER:$USER" "$BASHRC_PATH"
 
+# Gazebo localhost setting
+# Add ZENOH_LOCAL_ROUTER=1 if not already present
+grep -F "export ZENOH_LOCAL_ROUTER=" "$BASHRC_PATH" || echo "export ZENOH_LOCAL_ROUTER=1" >> "$BASHRC_PATH"
+
+
 # Fix rosdep permission
 mkdir -p "$HOME/.ros"
 cp -r /root/.ros/rosdep "$HOME/.ros/rosdep"

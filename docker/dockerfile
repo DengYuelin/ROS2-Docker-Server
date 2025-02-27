@@ -128,4 +128,3 @@ ENTRYPOINT [ "/bin/bash", "-c", "/entrypoint.sh" ]
 ENV USER mfet442
 ENV PASSWD ubuntu
 ENV ROS_DOMAIN_ID 20
-ENV GAZEBO_MASTER_URI http://localhost:11345
