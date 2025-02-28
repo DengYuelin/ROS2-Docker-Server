@@ -1,5 +1,11 @@
 # ROS2-Docker-Server
 
+## Creating Image
+
+```bash
+docker build -t mfet442/ros2-desktop-vnc:jazzy .
+```
+
 ## Creating the container
 
 ```bash
@@ -11,7 +17,7 @@ docker run -d \
     --security-opt seccomp=unconfined\
     --shm-size=512m \
     -v /host/home/docker_ws/user1:/home \
-    --name user1_container ros2-desktop-vnc:latest
+    --name user1_container ros2-desktop-vnc:jazzy
 ```
 
 ## License
