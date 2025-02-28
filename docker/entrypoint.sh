@@ -5,6 +5,12 @@ USER=${USER:-root}
 HOME=/root
 INIT_FLAG="/container_initialized"
 
+# Ensure the home directory is set properly
+if [ "$USER" != "root" ]; then
+    HOME="/home/$USER"
+fi
+
+# First-time setup
 if [ ! -f "$INIT_FLAG" ]; then
     echo "* First-time container setup detected."
 
@@ -16,7 +22,6 @@ if [ ! -f "$INIT_FLAG" ]; then
             echo "  set default password to \"ubuntu\""
             PASSWORD=ubuntu
         fi
-        HOME="/home/$USER"
         echo "$USER:$PASSWORD" | /usr/sbin/chpasswd 2> /dev/null || echo ""
         cp -r /root/{.config,.gtkrc-2.0,.asoundrc} "$HOME" 2>/dev/null
         chown -R "$USER:$USER" "$HOME"
@@ -35,8 +40,12 @@ if [ ! -f "$INIT_FLAG" ]; then
     # Mark initialization as complete
     touch "$INIT_FLAG"
 else
-    echo "* Container restart detected. Skipping user and password setup."
+    echo "* Container restart detected. Skipping password setup."
 fi
+
+# Ensure proper permissions (executed on every startup)
+chown -R "$USER:$USER" "$HOME"
+
 # xstartup
 XSTARTUP_PATH="$HOME/.vnc/xstartup"
 cat << EOF > "$XSTARTUP_PATH"
@@ -82,7 +91,7 @@ command=gosu '$USER' bash '$VNCRUN_PATH'
 command=gosu '$USER' bash -c "websockify --web=/usr/lib/novnc 80 localhost:5901"
 EOF
 
-# colcon
+# ROS setup
 BASHRC_PATH="$HOME/.bashrc"
 grep -F "source /opt/ros/$ROS_DISTRO/setup.bash" "$BASHRC_PATH" || echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> "$BASHRC_PATH"
 grep -F "export ROS_AUTOMATIC_DISCOVERY_RANGE=" "$BASHRC_PATH" || echo "export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST" >> "$BASHRC_PATH"
@@ -367,5 +376,8 @@ chown -R "$USER:$USER" "$HOME/Desktop"
 # clearup
 PASSWORD=
 VNC_PASSWORD=
+
+# Ensure VNC password is owned by the user (important for restarts)
+chown -R "$USER:$USER" "$HOME/.vnc"
 
 exec /bin/tini -- supervisord -n -c /etc/supervisor/supervisord.conf
