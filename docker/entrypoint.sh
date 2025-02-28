@@ -3,30 +3,40 @@
 # Create User
 USER=${USER:-root}
 HOME=/root
-if [ "$USER" != "root" ]; then
-    echo "* enable custom user: $USER"
-    useradd --create-home --shell /bin/bash --user-group --groups adm,sudo "$USER"
-    echo "$USER ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-    if [ -z "$PASSWORD" ]; then
-        echo "  set default password to \"ubuntu\""
-        PASSWORD=ubuntu
+INIT_FLAG="/container_initialized"
+
+if [ ! -f "$INIT_FLAG" ]; then
+    echo "* First-time container setup detected."
+
+    if [ "$USER" != "root" ]; then
+        echo "* enable custom user: $USER"
+        useradd --create-home --shell /bin/bash --user-group --groups adm,sudo "$USER"
+        echo "$USER ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+        if [ -z "$PASSWORD" ]; then
+            echo "  set default password to \"ubuntu\""
+            PASSWORD=ubuntu
+        fi
+        HOME="/home/$USER"
+        echo "$USER:$PASSWORD" | /usr/sbin/chpasswd 2> /dev/null || echo ""
+        cp -r /root/{.config,.gtkrc-2.0,.asoundrc} "$HOME" 2>/dev/null
+        chown -R "$USER:$USER" "$HOME"
+        [ -d "/dev/snd" ] && chgrp -R adm /dev/snd
     fi
-    HOME="/home/$USER"
-    echo "$USER:$PASSWORD" | /usr/sbin/chpasswd 2> /dev/null || echo ""
-    cp -r /root/{.config,.gtkrc-2.0,.asoundrc} "$HOME" 2>/dev/null
+
+    # VNC password setup
+    VNC_PASSWORD=${PASSWORD:-ubuntu}
+
+    mkdir -p "$HOME/.vnc"
+    echo "$VNC_PASSWORD" | vncpasswd -f > "$HOME/.vnc/passwd"
+    chmod 600 "$HOME/.vnc/passwd"
     chown -R "$USER:$USER" "$HOME"
-    [ -d "/dev/snd" ] && chgrp -R adm /dev/snd
+    sed -i "s/password = WebUtil.getConfigVar('password');/password = '$VNC_PASSWORD'/" /usr/lib/novnc/app/ui.js
+
+    # Mark initialization as complete
+    touch "$INIT_FLAG"
+else
+    echo "* Container restart detected. Skipping user and password setup."
 fi
-
-# VNC password
-VNC_PASSWORD=${PASSWORD:-ubuntu}
-
-mkdir -p "$HOME/.vnc"
-echo "$VNC_PASSWORD" | vncpasswd -f > "$HOME/.vnc/passwd"
-chmod 600 "$HOME/.vnc/passwd"
-chown -R "$USER:$USER" "$HOME"
-sed -i "s/password = WebUtil.getConfigVar('password');/password = '$VNC_PASSWORD'/" /usr/lib/novnc/app/ui.js
-
 # xstartup
 XSTARTUP_PATH="$HOME/.vnc/xstartup"
 cat << EOF > "$XSTARTUP_PATH"
@@ -353,24 +363,6 @@ Exec=/usr/share/codium/codium --new-window %F
 Icon=vscodium
 EOF
 chown -R "$USER:$USER" "$HOME/Desktop"
-
-# Create the desktop shortcut dynamically
-cat << EOF > "$HOME/Desktop/Change_VNC_Password.desktop"
-[Desktop Entry]
-Name=Change VNC Password
-Comment=Change the VNC password and restart the server
-Exec=/usr/local/bin/change_vnc_password.sh
-Icon=preferences-desktop-user-password
-Terminal=true
-Type=Application
-Categories=Utility;
-EOF
-
-# Make the shortcut executable
-chmod +x "$HOME/Desktop/Change_VNC_Password.desktop"
-
-# Ensure it belongs to the correct user
-chown "$USER:$USER" "$HOME/Desktop/Change_VNC_Password.desktop"
 
 # clearup
 PASSWORD=
